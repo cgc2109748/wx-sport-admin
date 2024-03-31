@@ -20,7 +20,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
 import axios from 'axios';
-import _ from 'lodash'
+import _ from 'lodash';
 
 /**
  * @en-US Add node
@@ -104,7 +104,8 @@ const TableList: React.FC = () => {
   const [showDetail, setShowDetail] = useState<boolean>(false);
 
   const actionRef = useRef<ActionType>();
-  const [form] = Form.useForm()
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false)
   const [currentRow, setCurrentRow] = useState<API.RuleListItem>();
   const [selectedRowsState, setSelectedRows] = useState<API.RuleListItem[]>([]);
 
@@ -120,18 +121,18 @@ const TableList: React.FC = () => {
       dataIndex: 'title',
       render: (__: any, record: any) => {
         return <a onClick={() => {
-          let temp: any = _.cloneDeep(record)
+          let temp: any = _.cloneDeep(record);
           temp['image'] = [{
             uid: '-1',
             name: 'image.jpg',
             status: 'done',
-            url: record.image
-          }]
-          form.setFieldsValue(temp)
-          setCurrentRow(record)
-          setShowDetail(true)
-        }}>{record?.title}</a>
-      }
+            url: record.image,
+          }];
+          form.setFieldsValue(temp);
+          setCurrentRow(record);
+          setShowDetail(true);
+        }}>{record?.title}</a>;
+      },
     },
     {
       title: '发起人',
@@ -183,32 +184,45 @@ const TableList: React.FC = () => {
       dataIndex: 'option',
       valueType: 'option',
       render: (_, record) => {
+        const { id } = record;
         if (record.status === 'pending') {
-          const { id } = record;
           return [
             <a
               key='pass'
               //eslint-disable-next-line @typescript-eslint/no-use-before-define
-              onClick={() => approvalHandler(id, 'pass')}
+              onClick={() => approvalHandler(id, 'pass')} style={{ color: '#389e0d' }}
             >
               通过
             </a>,
             <a key='reject'
               //eslint-disable-next-line @typescript-eslint/no-use-before-define
-               onClick={() => approvalHandler(id, 'reject')} style={{ color: '#f50' }}>
+               onClick={() => approvalHandler(id, 'reject')}>
               拒绝
+            </a>,
+            <a key='reject'
+              //eslint-disable-next-line @typescript-eslint/no-use-before-define
+               onClick={() => deleteSport(id)} style={{ color: '#f50' }}>
+              删除
             </a>,
           ];
         }
-        return [];
+        return [
+          <a key='reject'
+            //eslint-disable-next-line @typescript-eslint/no-use-before-define
+             onClick={() => deleteSport(id)} style={{ color: '#f50' }}>
+            删除
+          </a>];
       },
     },
   ];
 
   const fetchData = async () => {
+    if (loading) return
+    setLoading(true)
     const res: any = await axios.get('http://118.195.248.209:5001/sport/list');
     if (res) {
       console.log('res:', res);
+      setLoading(false)
       return {
         success: true,
         data: res.data.results,
@@ -218,21 +232,26 @@ const TableList: React.FC = () => {
   };
 
   const approvalHandler = async (id: string, status: string) => {
+    if (loading) return
+    setLoading(true)
     const res: any = await axios.post('http://118.195.248.209:5001/sport/approve', {
       sportId: id,
       status,
     });
     if (res.data) {
+      setLoading(false)
       notification.success({
         message: '审批操作',
         description: '审批成功！',
-        duration: 3
-      })
-      actionRef.current.reload()
+        duration: 3,
+      });
+      actionRef.current.reload();
     }
   };
 
   const createSportHandler = async (values) => {
+    if (loading) return
+    setLoading(true)
     console.log('values:', values);
     try {
       const formData = new FormData();
@@ -251,25 +270,29 @@ const TableList: React.FC = () => {
       notification.success({
         message: '成功',
         description: '新增运动项目成功',
-        duration: 3
-      })
-      actionRef.current.reload()
+        duration: 3,
+      });
+      setLoading(false)
+      actionRef.current.reload();
       // Handle success (e.g., show a success message, redirect, etc.)
     } catch (error) {
+      setLoading(false)
       console.error('Error:', error);
       notification.error({
         message: '错误',
         description: error.message || error.data.message,
-        duration: 0
-      })
+        duration: 0,
+      });
     }
   };
 
   const updateSportHandler = async (values) => {
+    if (loading) return
+    setLoading(true)
     console.log('values:', values);
     try {
       const formData = new FormData();
-      formData.append('id', currentRow.id)
+      formData.append('id', currentRow.id);
       Object.keys(values).forEach(key => {
         formData.append(key, values[key]);
       });
@@ -285,22 +308,43 @@ const TableList: React.FC = () => {
       notification.success({
         message: '成功',
         description: '更新运动项目成功',
-        duration: 3
-      })
-      actionRef.current.reload()
-      setShowDetail(false)
-      setCurrentRow({})
+        duration: 3,
+      });
+      setLoading(false)
+      actionRef.current.reload();
+      setShowDetail(false);
+      setCurrentRow({});
       // Handle success (e.g., show a success message, redirect, etc.)
     } catch (error) {
+      setLoading(false)
       console.error('Error:', error);
       notification.error({
         message: '错误',
         description: error.message || error.data.message,
-        duration: 0
-      })
+        duration: 0,
+      });
     }
   };
 
+  const deleteSport = async (sportId: string) => {
+    if (loading) return
+    setLoading(true)
+    try {
+      const response = await axios.delete(`http://118.195.248.209:5001/sport/delete/${sportId}`);
+
+      console.log('删除成功:', response.data.message);
+      setLoading(false)
+      actionRef.current.reload()
+    } catch (error) {
+      setLoading(false)
+      console.error('删除失败:', error.response.data.error);
+      notification.error({
+        message: '错误',
+        description: error.message || error.data.message,
+        duration: 0,
+      });
+    }
+  };
 
   return (
     <PageContainer>
@@ -309,6 +353,7 @@ const TableList: React.FC = () => {
         actionRef={actionRef}
         rowKey='key'
         search={false}
+        loading={loading}
         toolBarRender={() => [
           <Button
             type='primary'
@@ -382,19 +427,19 @@ const TableList: React.FC = () => {
         <ProFormText label='发起人' width='lg' name='organizer' />
         <Row>
           <Col span={12}>
-            <ProFormDatePicker label='活动开始日期' name='startDate' fieldProps={{format: 'YYYY-MM-DD'}} />
+            <ProFormDatePicker label='活动开始日期' name='startDate' fieldProps={{ format: 'YYYY-MM-DD' }} />
           </Col>
           <Col span={12}>
-            <ProFormTimePicker label='活动开始时间' name='startTime' fieldProps={{format: 'HH:mm'}} />
+            <ProFormTimePicker label='活动开始时间' name='startTime' fieldProps={{ format: 'HH:mm' }} />
           </Col>
         </Row>
 
         <Row>
           <Col span={12}>
-            <ProFormDatePicker label='活动结束日期' name='endDate' fieldProps={{format: 'YYYY-MM-DD'}} />
+            <ProFormDatePicker label='活动结束日期' name='endDate' fieldProps={{ format: 'YYYY-MM-DD' }} />
           </Col>
           <Col span={12}>
-            <ProFormTimePicker label='活动结束时间' name='endTime' fieldProps={{format: 'HH:mm'}} />
+            <ProFormTimePicker label='活动结束时间' name='endTime' fieldProps={{ format: 'HH:mm' }} />
           </Col>
         </Row>
         <ProFormSelect mode='tags' label='标签' name='tags' style={{ width: '440px' }} />
@@ -410,10 +455,10 @@ const TableList: React.FC = () => {
         open={showDetail}
         onOpenChange={(opened) => setShowDetail(opened)}
         request={async () => {
-          console.log("-> currentRow", currentRow);
+          console.log('-> currentRow', currentRow);
           return {
-            data: currentRow
-          }
+            data: currentRow,
+          };
         }}
         onFinish={updateSportHandler}
       >
@@ -425,19 +470,19 @@ const TableList: React.FC = () => {
         <ProFormText label='发起人' width='lg' name='organizer' />
         <Row>
           <Col span={12}>
-            <ProFormDatePicker label='活动开始日期' name='startDate' fieldProps={{format: 'YYYY-MM-DD'}} />
+            <ProFormDatePicker label='活动开始日期' name='startDate' fieldProps={{ format: 'YYYY-MM-DD' }} />
           </Col>
           <Col span={12}>
-            <ProFormTimePicker label='活动开始时间' name='startTime' fieldProps={{format: 'HH:mm'}} />
+            <ProFormTimePicker label='活动开始时间' name='startTime' fieldProps={{ format: 'HH:mm' }} />
           </Col>
         </Row>
 
         <Row>
           <Col span={12}>
-            <ProFormDatePicker label='活动结束日期' name='endDate' fieldProps={{format: 'YYYY-MM-DD'}} />
+            <ProFormDatePicker label='活动结束日期' name='endDate' fieldProps={{ format: 'YYYY-MM-DD' }} />
           </Col>
           <Col span={12}>
-            <ProFormTimePicker label='活动结束时间' name='endTime' fieldProps={{format: 'HH:mm'}} />
+            <ProFormTimePicker label='活动结束时间' name='endTime' fieldProps={{ format: 'HH:mm' }} />
           </Col>
         </Row>
         <ProFormSelect mode='tags' label='标签' name='tags' style={{ width: '440px' }} />
