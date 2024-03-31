@@ -206,7 +206,7 @@ const TableList: React.FC = () => {
   ];
 
   const fetchData = async () => {
-    const res: any = await axios.get('http://localhost:5001/sport/list');
+    const res: any = await axios.get('http://118.195.248.209:5001/sport/list');
     if (res) {
       console.log('res:', res);
       return {
@@ -218,7 +218,7 @@ const TableList: React.FC = () => {
   };
 
   const approvalHandler = async (id: string, status: string) => {
-    const res: any = await axios.post('http://localhost:5001/sport/approve', {
+    const res: any = await axios.post('http://118.195.248.209:5001/sport/approve', {
       sportId: id,
       status,
     });
@@ -241,7 +241,7 @@ const TableList: React.FC = () => {
       });
 
       // Send a POST request to your backend endpoint
-      const res = await axios.post('http://localhost:5001/sport/add', formData, {
+      const res = await axios.post('http://118.195.248.209:5001/sport/add', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -275,7 +275,7 @@ const TableList: React.FC = () => {
       });
 
       // Send a POST request to your backend endpoint
-      const res = await axios.post('http://localhost:5001/sport/add', formData, {
+      const res = await axios.post('http://118.195.248.209:5001/sport/add', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
